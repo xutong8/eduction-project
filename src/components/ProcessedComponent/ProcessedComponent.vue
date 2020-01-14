@@ -2,7 +2,24 @@
   <div class="processed" ref="processed">
     <div class="processed_top">
       <span class="processed_top_font">SUM</span>
-      <div class="processed_top_content"></div>
+      <div class="processed_top_content">
+        <div class="processed_top_content_firstline">
+          <div
+            v-for="(item, index) in this.data.pcs"
+            :key="index"
+            class="processed_top_content_firstline_pcs"
+            :style="{width: 100.0/length+'%'}"
+          >{{ item }}</div>
+        </div>
+        <div class="processed_top_content_secondline">
+          <div
+            v-for="(item, index) in this.data.ncs"
+            :key="index"
+            class="processed_top_content_secondline_ncs"
+            :style="{width: 100.0/length+'%'}"
+          >{{ item }}</div>
+        </div>
+      </div>
     </div>
     <div class="processed_bottom"></div>
     <div
@@ -20,6 +37,17 @@ import * as d3 from "d3";
 
 export default {
   name: "ProcessedComponent",
+  props: {
+    data: {
+      type: Object,
+      required: true
+    }
+  },
+  data() {
+    return {
+      length: undefined
+    };
+  },
   methods: {
     originalState(processed) {
       d3.select(processed)
@@ -61,6 +89,14 @@ export default {
         console.log("dragleave...");
       }
     }
+  },
+  watch: {
+    data: {
+      deep: true,
+      handler(val) {
+        this.length = val.pcs.length + val.ncs.length;
+      }
+    }
   }
 };
 </script>
@@ -90,6 +126,40 @@ export default {
     .processed_top_content {
       width: 100%;
       height: calc(100% - 26px);
+      display: flex;
+      flex-direction: column;
+      .processed_top_content_firstline {
+        width: 100%;
+        flex: 1;
+        .processed_top_content_firstline_pcs {
+          float: right;
+          background: red;
+          font-size: 20px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          color: white;
+          height: 100%;
+          border: 1px solid white;
+        }
+      }
+      .processed_top_content_secondline {
+        width: 100%;
+        flex: 1;
+        display: flex;
+        flex-direction: row;
+        .processed_top_content_secondline_ncs {
+          float: left;
+          background: green;
+          font-size: 20px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          color: white;
+          height: 100%;
+          border: 1px solid white;
+        }
+      }
     }
   }
   .processed_bottom {

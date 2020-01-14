@@ -4,7 +4,14 @@
       <TitleComponent :data="data" :flexs="flexs" class="app_title" @dragstart="dragstart($event)" />
       <ContentComponent :data="data" :flexs="flexs" class="app_content" />
     </div>
-    <ProcessedComponent id="rightApp" @drop="drop($event)" @dragover.prevent />
+    <ProcessedComponent id="rightApp" @drop="drop($event)" @dragover.prevent :data="sumData" />
+    <a-modal title="确认框" v-model="visible" @ok="handleOk">
+      {{ field }}是属于什么类型的字段？
+      <a-radio-group name="radioGroup" v-model="radioValue">
+        <a-radio :value="1">PC</a-radio>
+        <a-radio :value="2">NC</a-radio>
+      </a-radio-group>
+    </a-modal>
   </div>
 </template>
 
@@ -17,10 +24,14 @@
 import TitleComponent from "./components/TitleComponent";
 import ContentComponent from "./components/ContentComponent";
 import ProcessedComponent from "./components/ProcessedComponent";
+import "ant-design-vue/dist/antd.css";
 import Vue from "vue";
+import { Modal, Radio } from "ant-design-vue";
 Vue.use(TitleComponent);
 Vue.use(ProcessedComponent);
 Vue.use(ContentComponent);
+Vue.component(Modal.name, Modal);
+Vue.use(Radio);
 
 // 生成数据
 const data = [];
@@ -50,7 +61,14 @@ export default {
       data,
       // 其中每个item用于指定每列的宽度
       flexs: [1, 1, 2, 2, 2, 2, 2, 2],
-      attributes: undefined
+      attributes: undefined,
+      visible: false, //控制modal是否显示
+      field: undefined, //设置当前选中列对应的fieldName
+      radioValue: 1, //单选框默认值
+      sumData: {
+        pcs: [],
+        ncs: []
+      }
     };
   },
   methods: {
@@ -79,19 +97,47 @@ export default {
       });
     },
     dragstart(event) {
-      if(event) {
+      if (event) {
         console.log("dragstart", event.target);
+
+        //获取当前选中的列对应的fieldName
+        const classList = Array.from(event.target.classList);
+        let index = -1;
+        for (let val in classList) {
+          if (classList[val].indexOf("chart-") != -1) {
+            index = val;
+            break;
+          }
+        }
+        this.field = classList[index].substr(6);
       }
     },
     drop(event) {
-      if(event) {
-        console.log('drop', event.currentTarget);
+      if (event) {
+        console.log("drop", event.currentTarget);
+        this.radioValue = 1; // 恢复默认值
+        this.visible = true;
+      }
+    },
+    handleOk(event) {
+      console.log("handleOk", event);
+      this.visible = false;
+      console.log(this.field, this.radioValue);
+      // const className = 'chart-' + this.field;
+      // const nodes = Array.from(document.getElementsByClassName(className));
+      // for(let val of nodes) {
+      //   const parent = val.parentNode;
+      //   parent.parentNode.removeChild(parent);
+      // }
+      if (this.radioValue == 1) {
+        this.sumData.pcs.push(this.field);
+      } else {
+        this.sumData.ncs.push(this.field);
       }
     }
   },
   created() {
     this.attributes = this.getAllAttributes();
-    // console.log(this.attributes);
     this.$store.commit("setAttributes", this.attributes);
   }
 };
