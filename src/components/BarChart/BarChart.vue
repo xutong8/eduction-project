@@ -25,28 +25,18 @@ export default {
       required: true
     },
     color: {
-        type: String,
-        required: true
+      type: String,
+      required: true
     }
   },
   computed: {
-    width() {
-      //get svg width
-
-      return this.$refs.svg.getBoundingClientRect().width;
-    },
-    height() {
-      //get svg height
-
-      return this.$refs.svg.getBoundingClientRect().height;
-    },
     barWidth() {
-      const width = this.width;
+      const width = this.width();
       const count = this.count;
       return width / count;
     },
     scaleX() {
-      const width = this.width;
+      const width = this.width();
       const count = this.count;
       return d3
         .scaleLinear()
@@ -59,7 +49,7 @@ export default {
       return d3.select(svg).selectAll("rect");
     },
     scaleY() {
-      const height = this.height;
+      const height = this.height();
       return d3
         .scaleLinear()
         .domain([1, 0])
@@ -67,6 +57,16 @@ export default {
     }
   },
   methods: {
+    width() {
+      //get svg width
+
+      return this.$refs.svg.getBoundingClientRect().width;
+    },
+    height() {
+      //get svg height
+
+      return this.$refs.svg.getBoundingClientRect().height;
+    },
     drawRect() {
       const data = this.data;
       const scaleX = this.scaleX;
@@ -74,15 +74,19 @@ export default {
       const rect = this.getRect;
       const width = this.barWidth;
       const color = this.color;
-      
+
       rect
         .data(data)
         .attr("x", (d, i) => scaleX(i))
-        .attr("y", d => scaleY(d))
+        .attr("y", scaleY(0))
         .attr("width", width)
-        .attr("height", d => scaleY(0) - scaleY(d))
+        .attr("height", 0)
         .attr("fill", color)
-        .attr('rx', '2px');
+        .attr("rx", "2px")
+        .transition()
+        .duration(500)
+        .attr("y", d => scaleY(d))
+        .attr("height", d => scaleY(0) - scaleY(d));
     }
   },
   mounted() {

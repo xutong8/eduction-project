@@ -10,15 +10,16 @@
           class="title_content_chart"
           :class="'chart-' + attributes[index-1][0]"
           draggable="true"
-          @dragstart="dragstart($event)"
+          @dragstart="dragstart(colorScale[index-1], $event)"
         >
           <div class="title_content_chart_background" :style="{background: colorScale[index-1]}"></div>
           <span v-text="attributes[index-1][0]"></span>
           <div class="barchart">
             <BarChart
-              :data="attributes[index-1][2].slice(0, 10)"
+              :data="attributes[index-1][2].slice(0, count)"
               :count="count"
               :color="colorScale[index-1]"
+              v-if="show"
             />
           </div>
         </div>
@@ -43,6 +44,10 @@ export default {
     flexs: {
       type: Array,
       required: true
+    },
+    sumArray: {
+      type: Array,
+      required: true
     }
   },
   components: {
@@ -52,7 +57,8 @@ export default {
     return {
       attributes: undefined,
       maps: undefined,
-      count: 10
+      count: 10,
+      show: true
     };
   },
   computed: {
@@ -64,11 +70,18 @@ export default {
     this.attributes = this.$store.state.attributes;
   },
   methods: {
-    dragstart(event) {
+    dragstart(color, event) {
       if (event) {
-        // console.log("dragstart", event.target);
-        this.$emit('dragstart', event);
+        this.$emit("dragstart", color, event);
       }
+    }
+  },
+  watch: {
+    sumArray() {
+      this.show = false;
+      this.$nextTick(function() {
+        this.show = true;
+      });
     }
   }
 };
@@ -102,17 +115,17 @@ export default {
       cursor: pointer;
       position: relative;
       .title_content_chart_background {
-          opacity: 0.2;
-          width: 100%;
-          height:  100%;
-          z-index: 0;
-          position: absolute;
-          left: 0;
-          top: 0;
+        opacity: 0.2;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+        position: absolute;
+        left: 0;
+        top: 0;
       }
       .barchart {
         width: 100%;
-        height: calc(100% - 26px);
+        height: calc(100% - 30px);
       }
     }
   }

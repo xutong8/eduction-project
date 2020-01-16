@@ -5,12 +5,16 @@ Vue.use(Vuex)
 
 export default new Vuex.Store({
     state: {
-        attributes: undefined
+        attributes: undefined,
+        data: undefined
     },
     getters: {},
     mutations: {
         setAttributes(state, attributes) {
             state.attributes = attributes;
+        },
+        setData(state, data) {
+            state.data = data;
         }
     },
     actions: {},

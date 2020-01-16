@@ -1,16 +1,34 @@
 <template>
   <div id="app">
     <div id="leftApp">
-      <TitleComponent :data="data" :flexs="flexs" class="app_title" @dragstart="dragstart($event)" />
+      <TitleComponent :data="data" :flexs="flexs" class="app_title" @dragstart="dragstart(arguments)" :sumArray="sumArray"/>
       <ContentComponent :data="data" :flexs="flexs" class="app_content" />
     </div>
-    <ProcessedComponent id="rightApp" @drop="drop($event)" @dragover.prevent :data="sumData" />
+    <ProcessedComponent
+      id="rightApp"
+      @drop="drop($event)"
+      @dragover.prevent
+      :data="sumData"
+      :weights="weights"
+      :sumArray="sumArray"
+      @dblclick="dblclick($event)"
+    />
     <a-modal title="确认框" v-model="visible" @ok="handleOk">
       {{ field }}是属于什么类型的字段？
       <a-radio-group name="radioGroup" v-model="radioValue">
         <a-radio :value="1">PC</a-radio>
         <a-radio :value="2">NC</a-radio>
       </a-radio-group>
+    </a-modal>
+    <a-modal title="Edit attributes weights" v-model="weightVisible" @ok="weightHandleOk">
+      <div v-for="(item, index) in sumData.pcs" :key="item" class="weightsLine">
+        <span>{{ item }} :</span>
+        <input v-model="weights[index]" />
+      </div>
+      <div v-for="(item, index) in sumData.ncs" :key="item" class="weightsLine">
+        <span>{{ item }} :</span>
+        <input v-model="weights[index+sumData.pcs.length]" />
+      </div>
     </a-modal>
   </div>
 </template>
@@ -20,18 +38,20 @@
 // 第二步，添加BarChart。
 // 第三步，添加多行的Record记录。
 // 第四步，添加SUM交互。
+// 第五步，编辑权重。
 
 import TitleComponent from "./components/TitleComponent";
 import ContentComponent from "./components/ContentComponent";
 import ProcessedComponent from "./components/ProcessedComponent";
 import "ant-design-vue/dist/antd.css";
 import Vue from "vue";
-import { Modal, Radio } from "ant-design-vue";
+import { Modal, Radio, Input } from "ant-design-vue";
 Vue.use(TitleComponent);
 Vue.use(ProcessedComponent);
 Vue.use(ContentComponent);
 Vue.component(Modal.name, Modal);
 Vue.use(Radio);
+Vue.use(Input);
 
 // 生成数据
 const data = [];
@@ -64,11 +84,15 @@ export default {
       attributes: undefined,
       visible: false, //控制modal是否显示
       field: undefined, //设置当前选中列对应的fieldName
+      color: undefined, //保存当前选中列对应的color
       radioValue: 1, //单选框默认值
       sumData: {
         pcs: [],
         ncs: []
-      }
+      },
+      weights: [],
+      weightVisible: false, //控制编辑weight的modal是否显示
+      sumArray: []
     };
   },
   methods: {
@@ -96,10 +120,10 @@ export default {
         }
       });
     },
-    dragstart(event) {
+    dragstart(params) {
+      const color = params[0];
+      const event = params[1];
       if (event) {
-        console.log("dragstart", event.target);
-
         //获取当前选中的列对应的fieldName
         const classList = Array.from(event.target.classList);
         let index = -1;
@@ -110,35 +134,49 @@ export default {
           }
         }
         this.field = classList[index].substr(6);
+        this.color = color;
       }
     },
     drop(event) {
       if (event) {
-        console.log("drop", event.currentTarget);
         this.radioValue = 1; // 恢复默认值
         this.visible = true;
       }
     },
-    handleOk(event) {
-      console.log("handleOk", event);
+    handleOk() {
       this.visible = false;
-      console.log(this.field, this.radioValue);
-      // const className = 'chart-' + this.field;
-      // const nodes = Array.from(document.getElementsByClassName(className));
-      // for(let val of nodes) {
-      //   const parent = val.parentNode;
-      //   parent.parentNode.removeChild(parent);
-      // }
+      const className = 'chart-' + this.field;
+      const nodes = Array.from(document.getElementsByClassName(className));
+      for(let val of nodes) {
+        const parent = val.parentNode;
+        parent.parentNode.removeChild(parent);
+      }
       if (this.radioValue == 1) {
         this.sumData.pcs.push(this.field);
       } else {
         this.sumData.ncs.push(this.field);
+      }
+      const length = this.sumData.pcs.length + this.sumData.ncs.length;
+      const percent = 100.0 / length;
+      this.weights = new Array(length).fill(percent);
+      const item = {};
+      item.field = this.field;
+      item.color = this.color;
+      this.sumArray.push(item);
+    },
+    weightHandleOk() {
+      this.weightVisible = false;
+    },
+    dblclick(event) {
+      if (event) {
+        this.weightVisible = true;
       }
     }
   },
   created() {
     this.attributes = this.getAllAttributes();
     this.$store.commit("setAttributes", this.attributes);
+    this.$store.commit("setData", this.data); //将初始化的数据放入store中
   }
 };
 </script>
@@ -163,5 +201,10 @@ export default {
     width: 20%;
     height: 100%;
   }
+}
+.weightsLine {
+  display: flex;
+  justify-content: space-between;
+  margin: 10px;
 }
 </style>
