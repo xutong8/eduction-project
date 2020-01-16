@@ -115,7 +115,7 @@ export default {
         .duration(500)
         .attr("width", d => {
           if(!right) {
-            return x(d[1]);
+            return x(d[1]) - x(d[0]);
           }
           else {
             return rightX(d[0]) - rightX(d[1]);
